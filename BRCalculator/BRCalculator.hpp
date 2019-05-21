@@ -51,10 +51,11 @@ protected:
     char m_cDelimStart;
     char m_cDelimEnd;
 
+    int32_t m_iRefBitrate;
     int32_t m_iFrmListLen;
     int32_t* m_pFrmBitsList;
     int32_t* m_pFrmBRList;
-    int32_t* m_pFrmAveBRList;
+    double* m_pFrmAveBRList;
 
     FILE* m_pBRStatFile;
 };

@@ -11,10 +11,14 @@
 
 
 int main(int argc, const char * argv[]) {
+    if (argc < 3) {
+        printf(" usage: app framerate frmSizeFile \n");
+        return BR_FAIL;
+    }
+
     const int32_t kLen = 200;
     char aLine[kLen];
     FILE* pInputFile = NULL;
-
     double fFrameRate = atof(argv[1]);
     if (fFrameRate < 0) {
         printf(" invalid frame rate \n");

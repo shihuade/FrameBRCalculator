@@ -15,6 +15,7 @@ BRCalculator::BRCalculator() :
     m_iFrameNum(0),
     m_iFrmListLen(0),
     m_iDelimStartNum(0),
+    m_iRefBitrate(1000000),
     m_cDelimStart(','),
     m_cDelimEnd('\n'),
     m_pFrmBitsList(NULL),
@@ -33,6 +34,7 @@ int32_t BRCalculator::init(double fFrmRate)
 {
     m_fFrameRate = fFrmRate;
     m_iFrameRate = static_cast<int32_t>(fFrmRate + 0.5);
+    m_iRefBitrate = 1000000;
     m_iDelimStartNum = 2;
     m_cDelimStart = ',';
     m_cDelimEnd = '\n';
@@ -43,9 +45,9 @@ int32_t BRCalculator::init(double fFrmRate)
     RCCheckedNull(m_pFrmBRList);
     memset(m_pFrmBRList, 0, sizeof(int32_t) * m_iFrmListLen);
     
-    m_pFrmAveBRList = (int32_t*) malloc(sizeof(int32_t) * m_iFrmListLen);
+    m_pFrmAveBRList = (double*) malloc(sizeof(double) * m_iFrmListLen);
     RCCheckedNull(m_pFrmAveBRList);
-    memset(m_pFrmAveBRList, 0, sizeof(int32_t) * m_iFrmListLen);
+    memset(m_pFrmAveBRList, 0, sizeof(double) * m_iFrmListLen);
     
     m_pFrmBitsList = (int32_t*) malloc(sizeof(int32_t) * m_iFrmListLen);
     RCCheckedNull(m_pFrmBitsList);
@@ -117,19 +119,22 @@ void BRCalculator::parseFrameBits(char* pLine, const int32_t kLen)
     }
 
     cFrmBits[iNum] = '\n';
-    m_iFrameBits= atoi(cFrmBits);
+    m_iFrameBits = atoi(cFrmBits);
+    m_iFrameBits *= 8;
+    
 }
 
 int32_t BRCalculator::updateFrameBR()
 {
-    int32_t iPreBRIdx = 0;
+    int32_t iPreBRIdx = 0, iAveBitrates = 0;
     int32_t iPreIdx = (m_iFrameNum - 1 + m_iFrmListLen) % m_iFrmListLen;
     int32_t iCurIdx = m_iFrameNum % m_iFrmListLen;
     double freDuration = RC_MAX(RC_ST_DURATION, m_iFrameNum / m_fFrameRate);
     double fCurDuration = RC_MAX(RC_ST_DURATION, (m_iFrameNum + 1) / m_fFrameRate);
+    double fRefBitsRatio =  m_iFrameBits / (double) m_iRefBitrate;
 
     //ave br from first frame
-    m_pFrmAveBRList[iCurIdx] = m_pFrmAveBRList[iPreIdx] * freDuration + m_iFrameBits;
+    m_pFrmAveBRList[iCurIdx] = m_pFrmAveBRList[iPreIdx] * freDuration + fRefBitsRatio;
     m_pFrmAveBRList[iCurIdx] /= fCurDuration;
     
     //short term bit rate within pass one second
@@ -140,11 +145,12 @@ int32_t BRCalculator::updateFrameBR()
     }
     m_pFrmBRList[iCurIdx] /= RC_ST_DURATION;
     
+    iAveBitrates = m_pFrmAveBRList[iCurIdx] * m_iRefBitrate;
     fprintf(m_pBRStatFile, "%d, %d, %d, %d, \n",
             m_iFrameNum, m_iFrameBits,
-            m_pFrmBRList[iCurIdx], m_pFrmAveBRList[iCurIdx]);
+            m_pFrmBRList[iCurIdx], iAveBitrates);
     
-    printf("%d, %d, %d, %d, \n", m_iFrameNum, m_iFrameBits, m_pFrmBRList[iCurIdx], m_pFrmAveBRList[iCurIdx]);
+    printf("FrmIdx=%5d,  FrmBits=%8d,  Bitrate=%8d, AveBitrate=%8d,\n", m_iFrameNum, m_iFrameBits, m_pFrmBRList[iCurIdx], iAveBitrates);
 
     
     m_pFrmBitsList[iCurIdx] = m_iFrameBits;
