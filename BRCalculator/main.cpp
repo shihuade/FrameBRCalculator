@@ -10,7 +10,8 @@
 #include "BRCalculator.hpp"
 
 
-int main(int argc, const char * argv[]) {
+int main(int argc, const char* argv[])
+{
     if (argc < 3) {
         printf(" usage: app framerate frmSizeFile \n");
         return BR_FAIL;
@@ -25,7 +26,7 @@ int main(int argc, const char * argv[]) {
         printf(" usage: app framerate frmSizeFile \n");
         return BR_FAIL;
     }
-    
+
     pInputFile = fopen(argv[2], "r");
     if (!pInputFile) {
         printf(" failed to open input statistic file \n");
@@ -38,11 +39,11 @@ int main(int argc, const char * argv[]) {
 
     while (!feof(pInputFile)) {
         fgets(aLine, kLen, pInputFile);
-        
+
         cBRCalculator.parseFrameBits(aLine, kLen);
         cBRCalculator.updateFrameBR();
     }
-    
-    
+
+
     return 0;
 }
